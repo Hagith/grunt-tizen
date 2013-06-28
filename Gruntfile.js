@@ -89,5 +89,5 @@ module.exports = function (grunt) {
     'mochaccino:unit',
     'mochaccino:int'
   ]);
-  grunt.registerTask('default', 'test');
+  grunt.registerTask('default', 'all');
 };
