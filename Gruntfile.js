@@ -2,6 +2,7 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-mochaccino');
+  grunt.loadNpmTasks('grunt-release');
 
   grunt.initConfig({
     clean: ['build'],
@@ -58,6 +59,23 @@ module.exports = function (grunt) {
       int: {
         files: { src: 'test/integration/*.test.js' },
         reporter: 'dot'
+      }
+    },
+
+    release: {
+      options: {
+        // manage add/commit/push manually
+        add: false,
+        commit: false,
+        push: false,
+
+        bump: false,
+        tag: true,
+        pushTags: true,
+        npm: true,
+        folder: '.',
+        tagName: '<%= version %>',
+        tagMessage: 'Version <%= version %>'
       }
     }
   });
