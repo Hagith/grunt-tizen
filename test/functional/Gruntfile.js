@@ -62,8 +62,7 @@ module.exports = function (grunt) {
       },
 
       debug: {
-        action: 'debug',
-        browserCmd: 'google-chrome %URL%'
+        action: 'debug'
       },
 
       debugNoBrowser: {
