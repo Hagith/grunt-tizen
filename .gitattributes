@@ -1,0 +1,2 @@
+# retain LF ending on .sh files
+*.sh text eol=lf
