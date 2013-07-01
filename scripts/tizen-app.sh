@@ -9,7 +9,8 @@
 # management simpler
 
 # uninstall a Tizen app
-uninstall () {
+uninstall ()
+{
   APP_ID=$2
 
   if [[ $APP_ID = "" ]] ; then
@@ -30,7 +31,8 @@ uninstall () {
 }
 
 # install a Tizen app
-install () {
+install ()
+{
   PACKAGE=$2
 
   if [[ $PACKAGE = "" ]] ; then
@@ -42,7 +44,8 @@ install () {
 }
 
 # start a Tizen app
-start () {
+start ()
+{
   APP_ID=$2
 
   if [[ $APP_ID = "" ]] ; then
@@ -62,7 +65,8 @@ start () {
 }
 
 # properly stop a Tizen app
-stop () {
+stop ()
+{
   APP_ID=$2
 
   if [[ $APP_ID = "" ]] ; then
@@ -100,7 +104,8 @@ stop () {
 # debug a Tizen app
 # kill, uninstall, install and debug start a Tizen app;
 # intended for installation on a Tizen handset
-debug () {
+debug ()
+{
   APP_ID=$2
 
   if [[ $APP_ID = "" ]] ; then
