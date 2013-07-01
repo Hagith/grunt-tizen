@@ -2,13 +2,15 @@
 
 grunt-tizen is a grunt plugin for installing, uninstalling, running and debugging applications on a Tizen device. It wraps [<code>sdb</code>](https://developer.tizen.org/documentation/articles/smart-development-bridge) to push files to the device and operate its command line (c.f. Android's adb); and wraps <code>pkgcmd</code> and <code>wrt-launcher</code> on the device itself to manage the application lifecycle.
 
-# Contributing
-
-If you are interested in contributing to the project, the <em>HACKING.md</em> file explains more about building grunt-tizen and running its test suite.
-
 # License
 
-Apache version 2. See <em>LICENSE</em> for more details.
+Apache version 2, copyright Intel Corporation Ltd. See <em>LICENSE</em> for more details.
+
+# Contributing
+
+Bug reports and feature requests are encouraged: please use the [github issue tracker for the project](https://github.com/01org/grunt-tizen/issues) to file them.
+
+If you are interested in contributing code to the project, the <em>HACKING.md</em> file explains more about building grunt-tizen and running its test suite. Please ensure that any code you write has test coverage as close as possible to 100%. Pull requests should be targeted at the master branch.
 
 # Getting started
 
