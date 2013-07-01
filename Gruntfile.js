@@ -69,7 +69,7 @@ module.exports = function (grunt) {
         commit: false,
         push: false,
 
-        bump: false,
+        bump: true,
         tag: true,
         pushTags: true,
         npm: true,
