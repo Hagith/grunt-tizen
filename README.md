@@ -30,7 +30,9 @@ Once the plugin has been installed, enable it with a line of JavaScript in your 
 
 # Dependencies
 
-grunt-tizen depends on the <code>sdb</code> command line tool. This is available for various platforms from http://download.tizen.org/tools/latest-release/.
+grunt-tizen has only been tested on Linux (Fedora 17).
+
+It depends on the <code>sdb</code> command line tool. This is available for various platforms from http://download.tizen.org/tools/latest-release/.
 
 You will also need a device running Tizen 2.1.
 
