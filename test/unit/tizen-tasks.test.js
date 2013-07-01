@@ -413,7 +413,8 @@ describe('tizenTask script', function () {
 
   var meta = {
     id: 'someid',
-    uri: 'someuri'
+    uri: 'someuri',
+    packageName: 'somepackagename'
   };
 
   var remoteScript = '/tmp/tizen-app.sh';
@@ -454,7 +455,7 @@ describe('tizenTask script', function () {
 
     sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
     sinon.stub(bridge, 'runScript')
-         .withArgs(remoteScript, [meta.uri, meta.id], aFunction)
+         .withArgs(remoteScript, [meta.packageName, meta.id], aFunction)
          .callsArgWith(2, err);
 
     tasks.tizenTask(data, function (error) {
@@ -473,7 +474,7 @@ describe('tizenTask script', function () {
       args: ['foo', 'bar']
     };
 
-    var expectedArgs = [meta.uri, meta.id, 'foo', 'bar'];
+    var expectedArgs = [meta.packageName, meta.id, 'foo', 'bar'];
 
     sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
 
