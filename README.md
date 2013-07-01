@@ -1,12 +1,20 @@
 # grunt-tizen
 
-grunt-tizen is a grunt plugin for installing, uninstalling, running and debugging applications on a Tizen device.
+grunt-tizen is a grunt plugin for installing, uninstalling, running and debugging applications on a Tizen device. It wraps [<code>sdb</code>](https://developer.tizen.org/documentation/articles/smart-development-bridge) to push files to the device and operate its command line (c.f. Android's adb); and wraps <code>pkgcmd</code> and <code>wrt-launcher</code> on the device itself to manage the application lifecycle.
+
+# Contributing
+
+If you are interested in contributing to the project, the <em>HACKING.md</em> file explains more about building grunt-tizen and running its test suite.
+
+# License
+
+Apache version 2. See <em>LICENSE</em> for more details.
 
 # Getting started
 
-This plugin requires Grunt ~0.4.0.
+This plugin requires **Grunt ~0.4.0**.
 
-If you are only interested in using grunt-tizen in your own project, you can install it with:
+To use grunt-tizen in your own project, install it with:
 
     npm install grunt-tizen --save-dev
 
@@ -15,10 +23,8 @@ Once the plugin has been installed, enable it with a line of JavaScript in your 
     module.exports = function (grunt) {
       grunt.loadNpmTasks('grunt-tizen');
 
-      // grunt.initConfig() etc.
+      // grunt.initConfig({ ... }) etc.
     };
-
-If you are interested in contributing to the project, the HACKING.md file explains more about building grunt-tizen and running its test suite.
 
 # Dependencies
 
@@ -26,13 +32,18 @@ grunt-tizen depends on the <code>sdb</code> command line tool. This is available
 
 You will also need a device running Tizen 2.1.
 
-If you want to use the <em>asRoot</em> option for the tizen task, you will need a very recent version of sdb with support for the "root" command (e.g. the tizen_2.0 branch). All of the other tizen:* tasks work with older versions of sdb, however.
-
-Some familiarity with <code>sdb</code> can be useful in some situations, where grunt-tizen doesn't or can't hide the underlying implementation details of <code>sdb</code>. The aim over time is to reduce the visibility of that tool and properly encapsulate it.
-
 The device should be connected to the host running grunt via a USB connection. This plugin has not been tested with multiple simultaneous USB connections to Tizen devices. It is unlikely to work in such an environment.
 
-Note that grunt-tizen does not package applications for deployment to Tizen. You will need another packaging tool (e.g. webtizen from the Tizen SDK or grunt-zipup) to package your application into a wgt file, ready for deployment.
+If you want to use the <em>asRoot</em> option for the <code>tizen</code> task, you will need a very recent version of <code>sdb</code> with support for the "root" command. Note that this feature is undocumented, so you may have to do the following to test for its presence:
+
+    $ sdb root on
+    Switched to 'root' account mode
+
+If you get the "Switched to 'root' account mode", your version of <code>sdb</code> supports <em>asRoot</em>.Note that all of the other tizen:* task options work with older versions of sdb, however.
+
+**Note: the version of Tizen used for testing grunt-tizen has a broken <code>pkgcmd</code> which will not allow installation by non-root users. So at the moment, a version of <code>sdb</code> which supports <code>sdb root on/off</code> is REQUIRED. The intention is to remove this requirement once <code>pkgcmd</code> is fixed.**
+
+Note that grunt-tizen does not package applications for deployment to Tizen. You will need another packaging tool (e.g. webtizen from the Tizen SDK or [grunt-zipup](https://github.com/01org/grunt-zipup)) to package your application into a wgt file ready for deployment.
 
 # General configuration
 
@@ -65,7 +76,7 @@ Configuration for grunt-tizen tasks is described below.
 
 This task automates pushing the <em>tizen-app.sh</em> script to the attached device, overwriting any file already in the specified location. It also applies a <code>chmod +x</code> to the script to make it executable.
 
-The destination of the file is <code>tizenAppScriptDir</code> (from tizen_configuration) + <code>'tizen-app.sh'</code>.
+The destination of the file is <code>tizenAppScriptDir</code> (from <em>tizen_configuration</em>) + <code>'tizen-app.sh'</code>.
 
 The task requires no configuration beyond that in the <em>tizen_configuration</em> section (see above).
 
@@ -92,16 +103,18 @@ Note that several tasks rely on metadata from a <em>config.xml</em> file (Tizen 
         id="https://github.com/01org/tetesttest"
         version="0.0.1"
         viewmodes="fullscreen">
-    <name>test</name>
+    <name>MyApplication</name>
     <icon src="icon.png"/>
-    <tizen:application id="tetesttest" required_version="1.0"/>
+    <tizen:application id="myapplictn.7dhfyr7e7f"
+                       package="myapplictn"
+                       required_version="2.1"/>
     <content src="index.html"/>
 </widget>
 ```
 
-The two important pieces of data are the <code>id</code> attribute of the <code>widget</code> element; and the <code>id</code> of the <code>tizen:application</code> element. In grunt-tizen, these are referred to as the **app ID** and the **app URI** respectively. These identifiers are required by the <code>pkgcmd</code> and <code>wrt-launcher</code> commands on the Tizen device, and are automagically provided to the tizen-app.sh script when certain tizen task subcommands are invoked.
+The important data here are the <code>id</code> and <code>package</code> of the <code>tizen:application</code> element. In grunt-tizen, these are referred to as the **app ID** and the **package name** respectively. These identifiers are required by the <code>pkgcmd</code> and <code>wrt-launcher</code> commands on the Tizen device. They are automagically provided to the <em>tizen-app.sh</em> script when certain tizen task subcommands are invoked.
 
-It is also important to note that these tasks are intended for the control of a single application, with a single config.xml file, and are not intended to control multiple applications simultaneously.
+It is also important to note that these tasks are intended for the control of a single application, with a single <em>config.xml</em> file, and are not intended to control multiple applications simultaneously.
 
 Having said that, the Bridge API (in <em>lib/bridge.js</em>) provides a low-level wrapper around <code>sdb</code> which is not tied to a single <em>config.xml</em> file. Alternative grunt tasks could be defined on top of the Bridge API if more flexibility were needed.
 
@@ -241,11 +254,11 @@ Each action has its own additional options, as described in the following sectio
 
 By default, running this action invokes the specified remoteScript like this:
 
-    remoteScript <app URI> <app ID>
+    remoteScript <package name> <app ID>
 
 where:
 
-*   <code>&lt;app ID&gt;</code> is the value of the <code>widget@id</code> attribute in <em>config.xml</em>.
+*   <code>&lt;package name&gt;</code> is the value of the <code>widget.tizen:application@package</code> attribute in <em>config.xml</em>.
 *   <code>&lt;app URI&gt;</code> is the value of the <code>widget.tizen:application@id</code> attribute in <em>config.xml</em>.
 
 Extra arguments can be passed to the script by setting the <em>args</em> option.

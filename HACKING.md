@@ -23,9 +23,11 @@ If you want to run the test suites, you will need a global install of mocha:
 grunt-tizen doesn't require any compilation, but does have a couple of tasks for developer use:
 
 *   grunt clean
+
     Remove the build/ directory.
 
 *   grunt lint
+
     Lint the code in the tasks/ and lib/ directories.
 
 # Tests
