@@ -42,6 +42,13 @@ touchFile(oldestPath, oldestTime);
 touchFile(olderPath, olderTime);
 touchFile(youngestPath, youngestTime);
 
+// glob() returns a path containing forward slashes, whether
+// running on Windows or *nix; for the purposes of comparing
+// paths in tests, we convert back slashes to forward slashes
+var convertSlashes = function (str) {
+  return str.replace(/\\/g, '/');
+};
+
 // main
 describe('file lister', function () {
   it('should list files in time order', function () {
@@ -93,7 +100,10 @@ describe('file lister', function () {
   it('should list files matching a glob', function (done) {
     var spy = sinon.spy();
 
-    var expected = [ olderPath, oldestPath ];
+    var expected = [
+      convertSlashes(olderPath),
+      convertSlashes(oldestPath)
+    ];
 
     var cb = function () {
       spy.apply(null, arguments);
@@ -108,7 +118,7 @@ describe('file lister', function () {
   it('should return the most-recently-modified file matching a glob', function (done) {
     var spy = sinon.spy();
 
-    var expected = [ olderPath ];
+    var expected = [ convertSlashes(olderPath) ];
 
     var cb = function () {
       spy.apply(null, arguments);
