@@ -64,11 +64,9 @@ module.exports = function (grunt) {
 
     release: {
       options: {
-        // manage add/commit/push manually
-        add: false,
-        commit: false,
-        push: false,
-
+        add: true,
+        commit: true,
+        push: true,
         bump: true,
         tag: true,
         pushTags: true,
