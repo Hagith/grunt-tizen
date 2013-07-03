@@ -24,10 +24,32 @@ var fs = require('fs');
 var fileLister = require('../../lib/file-lister');
 
 var dataDir = path.join(__dirname, 'data');
+var oldestPath = path.join(dataDir, 'oldest.txt');
 var olderPath = path.join(dataDir, 'older.txt');
-var oldestPath = path.join(dataDir, 'oldest.txt')
-var youngestPath = path.join(dataDir, 'youngest.txt')
+var youngestPath = path.join(dataDir, 'youngest.txt');
 
+// set the same mtimes on the files on every test run
+var oldestTime = 1372702811185;
+var olderTime = oldestTime + (60 * 1000);
+var youngestTime = olderTime + (60 * 1000);
+
+var touchFile = function (path, timestamp) {
+  var time = new Date(timestamp);
+  fs.utimesSync(path, time, time)
+};
+
+touchFile(oldestPath, oldestTime);
+touchFile(olderPath, olderTime);
+touchFile(youngestPath, youngestTime);
+
+// glob() returns a path containing forward slashes, whether
+// running on Windows or *nix; for the purposes of comparing
+// paths in tests, we convert back slashes to forward slashes
+var convertSlashes = function (str) {
+  return str.replace(/\\/g, '/');
+};
+
+// main
 describe('file lister', function () {
   it('should list files in time order', function () {
     var latest = fileLister.getLatest([
@@ -78,7 +100,10 @@ describe('file lister', function () {
   it('should list files matching a glob', function (done) {
     var spy = sinon.spy();
 
-    var expected = [ olderPath, oldestPath ];
+    var expected = [
+      convertSlashes(olderPath),
+      convertSlashes(oldestPath)
+    ];
 
     var cb = function () {
       spy.apply(null, arguments);
@@ -93,7 +118,7 @@ describe('file lister', function () {
   it('should return the most-recently-modified file matching a glob', function (done) {
     var spy = sinon.spy();
 
-    var expected = [ olderPath ];
+    var expected = [ convertSlashes(olderPath) ];
 
     var cb = function () {
       spy.apply(null, arguments);

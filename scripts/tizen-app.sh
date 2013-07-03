@@ -9,7 +9,8 @@
 # management simpler
 
 # uninstall a Tizen app
-uninstall () {
+uninstall ()
+{
   APP_ID=$2
 
   if [[ $APP_ID = "" ]] ; then
@@ -18,7 +19,7 @@ uninstall () {
   fi
 
   # check whether app is installed
-  APP_EXISTS=`wrt-launcher -l | grep $APP_ID`
+  APP_EXISTS=$(wrt-launcher -l | grep $APP_ID)
 
   # uninstall
   if [ "x$APP_EXISTS" != "x" ] ; then
@@ -30,7 +31,8 @@ uninstall () {
 }
 
 # install a Tizen app
-install () {
+install ()
+{
   PACKAGE=$2
 
   if [[ $PACKAGE = "" ]] ; then
@@ -42,7 +44,8 @@ install () {
 }
 
 # start a Tizen app
-start () {
+start ()
+{
   APP_ID=$2
 
   if [[ $APP_ID = "" ]] ; then
@@ -51,7 +54,7 @@ start () {
   fi
 
   # only start if not running
-  IS_RUNNING=`wrt-launcher -r $APP_ID`
+  IS_RUNNING=$(wrt-launcher -r $APP_ID)
   if [[ "$IS_RUNNING" = "result: running" ]] ; then
     echo "app with ID $APP_ID is already running" 1>&2
     exit 1
@@ -62,7 +65,8 @@ start () {
 }
 
 # properly stop a Tizen app
-stop () {
+stop ()
+{
   APP_ID=$2
 
   if [[ $APP_ID = "" ]] ; then
@@ -71,7 +75,7 @@ stop () {
   fi
 
   # check whether app is installed
-  APP_EXISTS=`wrt-launcher -l | grep $APP_ID`
+  APP_EXISTS=$(wrt-launcher -l | grep $APP_ID)
 
   NOT_RUNNING=
 
@@ -81,7 +85,7 @@ stop () {
   # it can't be uninstalled
   if [ "x$APP_EXISTS" != "x" ] ; then
     while [ "x$NOT_RUNNING" = "x" ] ; do
-      RESULT=`wrt-launcher -k $APP_ID | grep "App isn't running"`
+      RESULT=$(wrt-launcher -k $APP_ID | grep "App isn't running")
 
       if [ "x" != "x$RESULT" ] ; then
         NOT_RUNNING=true
@@ -100,7 +104,8 @@ stop () {
 # debug a Tizen app
 # kill, uninstall, install and debug start a Tizen app;
 # intended for installation on a Tizen handset
-debug () {
+debug ()
+{
   APP_ID=$2
 
   if [[ $APP_ID = "" ]] ; then
@@ -110,12 +115,12 @@ debug () {
 
   # run under debug, capturing the port
   # only start if not running
-  IS_RUNNING=`wrt-launcher -r $APP_ID`
+  IS_RUNNING=$(wrt-launcher -r $APP_ID)
   if [[ "$IS_RUNNING" = "result: running" ]] ; then
     echo "app with ID $APP_ID is already running" 1>&2
     exit 1
   else
-    PORT=`wrt-launcher -d -s $APP_ID | grep port | awk -F": " '{print $2}'`
+    PORT=$(wrt-launcher -d -s $APP_ID | grep port | awk -F": " '{print $2}')
     if [ "x$PORT" = "x" ] ; then
       echo "No debug port available; resolve by ensuring phone screen is not locked"
     else
