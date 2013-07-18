@@ -37,7 +37,7 @@ grunt-tizen has been tested on:
 
 grunt-tizen depends on the <code>sdb</code> command line tool. This is available for various platforms from http://download.tizen.org/tools/latest-release/.
 
-It will also work with the version of <code>sdb</code> bundled with the Tizen IDE (located in <em>&lt;IDE root directory&lt;\tools\sdb.exe</em>).
+It will also work with the version of <code>sdb</code> bundled with the Tizen IDE (located in <em>&lt;IDE root directory&gt;\tools\sdb.exe</em>).
 
 You will also need a device running Tizen 2.1.
 
