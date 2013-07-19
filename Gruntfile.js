@@ -1,7 +1,4 @@
 module.exports = function (grunt) {
-  // use the local mocha script to run tests
-  var MOCHA = 'node_modules/grunt-mochaccino/node_modules/mocha/bin/mocha';
-
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-mochaccino');
@@ -54,14 +51,12 @@ module.exports = function (grunt) {
       },
 
       unit: {
-        cmd: MOCHA,
         files: { src: 'test/unit/*.test.js' },
         reporter: 'dot'
       },
 
       // integration tests
       int: {
-        cmd: MOCHA,
         files: { src: 'test/integration/*.test.js' },
         reporter: 'dot'
       }
