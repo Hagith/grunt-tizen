@@ -4,7 +4,7 @@
   "description": "grunt tasks for managing Tizen apps",
   "main": "tasks/grunt-tizen.js",
   "scripts": {
-    "test": "grunt mochaccino:unit mochaccino:int",
+    "test": "node_modules/grunt-cli/bin/grunt mochaccino:unit mochaccino:int",
     "blanket": {
       "pattern": "grunt-tizen/lib/"
     }
