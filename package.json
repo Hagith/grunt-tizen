@@ -42,6 +42,7 @@
     "grunt-release": "~0.3.5",
     "chai": "~1.6.1",
     "sinon": "~1.7.2",
-    "blanket": "git+https://github.com/alex-seville/blanket.git#development"
+    "blanket": "git+https://github.com/alex-seville/blanket.git#development",
+    "grunt-conventional-changelog": "~1.0.0"
   }
 }

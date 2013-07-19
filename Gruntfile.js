@@ -3,6 +3,7 @@ module.exports = function (grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-mochaccino');
   grunt.loadNpmTasks('grunt-release');
+  grunt.loadNpmTasks('grunt-conventional-changelog');
 
   grunt.initConfig({
     clean: ['build'],
@@ -78,6 +79,7 @@ module.exports = function (grunt) {
         tagMessage: 'Version <%= version %>'
       }
     }
+
   });
 
   grunt.registerTask('test', 'mochaccino:unit');
