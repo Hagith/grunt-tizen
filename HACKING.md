@@ -14,10 +14,6 @@ Once you have these, install the dependencies for the project with:
 
     npm install .
 
-If you want to run the test suites, you will need a global install of mocha:
-
-    npm install -g mocha
-
 # Build tasks
 
 grunt-tizen doesn't require any compilation, but does have a couple of tasks for developer use:
