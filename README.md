@@ -73,7 +73,7 @@ The shared configuration for both tasks (<code>tizen_prepare</code> and <code>ti
         // path to the sdb command (default: process.env.SDB or 'sdb')
         sdbCmd: '/home/bilbo/bin/sdb'
       }
-   });
+    });
 
 The <code>tizen-app.sh</code> script is a shell script which runs on Tizen devices, wrapping native Tizen commands to make them simpler to call remotely via <code>sdb shell</code>. It also does some of the work to interpret error messages and output from the Tizen commands to simplify the grunt-tizen code. You can find it in the <em>scripts</em> directory of the grunt-tizen source.
 
