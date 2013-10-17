@@ -607,7 +607,7 @@ describe('Bridge', function () {
 
       mockSdbWrapper.expects('shell')
                     .withArgs(
-                      cmd,
+                      bridge.scriptInterpreterPath + ' ' + cmd,
                       aFunction
                     )
                     .callsArgWith(1, err)
@@ -628,7 +628,7 @@ describe('Bridge', function () {
 
       mockSdbWrapper.expects('shell')
                     .withArgs(
-                      cmd,
+                      bridge.scriptInterpreterPath + ' ' + cmd,
                       aFunction
                     )
                     .callsArgWith(1)
@@ -652,7 +652,7 @@ describe('Bridge', function () {
 
       mockSdbWrapper.expects('shell')
                     .withArgs(
-                      expected,
+                      bridge.scriptInterpreterPath + ' ' + expected,
                       aFunction
                     )
                     .callsArgWith(1)
