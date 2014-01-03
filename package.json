@@ -28,7 +28,8 @@
     "async": "~0.2.9",
     "lodash": "~1.2.1",
     "xml2json": "~0.3.2",
-    "glob": "~3.2.1"
+    "glob": "~3.2.1",
+    "grunt-contrib-watch": "~0.5.3"
   },
   "peerDependencies": {
     "grunt": "~0.4.1"

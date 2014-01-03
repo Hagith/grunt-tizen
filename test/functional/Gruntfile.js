@@ -88,6 +88,13 @@ module.exports = function (grunt) {
         action: 'script',
         remoteScript: '/home/developer/dump-localStorage.sh',
         args: ['test']
+      },
+
+      watch: {
+        action: 'watch',
+        files: [{
+          src: '**/*.js'
+        }]
       }
     }
   });
