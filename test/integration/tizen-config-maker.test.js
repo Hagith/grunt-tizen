@@ -42,16 +42,14 @@ describe('tizenConfigMaker', function () {
       configFile: path.join(__dirname, 'data/config.xml')
     });
 
-    tizenConfig.getMeta(function (err, result) {
-      expect(err).to.be.null;
-
-      result.should.eql({
-        uri: 'https://bogus.url/bogusappln',
-        id: 'bogusappln',
-        packageName: 'bogusappln.1234567890'
-      });
-
-      done();
+    tizenConfig.getMeta().should.not.throw;
+    tizenConfig.getMeta().should.eql({
+      uri: 'https://bogus.url/bogusappln',
+      id: 'bogusappln',
+      packageName: 'bogusappln.1234567890',
+      content: 'index.html'
     });
+
+    done();
   });
 });

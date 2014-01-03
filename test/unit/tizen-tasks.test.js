@@ -319,7 +319,7 @@ describe('tizenTask uninstall', function () {
       action: 'uninstall'
     };
 
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, new Error());
+    sinon.stub(tizenConfig, 'getMeta').throws(new Error());
 
     tasks.tizenTask(data, function (err) {
       err.should.be.instanceOf(Error);
@@ -335,7 +335,7 @@ describe('tizenTask uninstall', function () {
       action: 'uninstall'
     };
 
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(meta);
 
     var mockBridge = sinon.mock(bridge)
     mockBridge.expects('uninstall')
@@ -359,7 +359,7 @@ describe('tizenTask uninstall', function () {
       stopOnFailure: expectedStop
     };
 
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(meta);
 
     var mockBridge = sinon.mock(bridge)
     mockBridge.expects('uninstall')
@@ -380,7 +380,7 @@ describe('tizenTask uninstall', function () {
       action: 'uninstall'
     };
 
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(meta);
 
     var mockBridge = sinon.mock(bridge)
     mockBridge.expects('uninstall')
@@ -435,7 +435,7 @@ describe('tizenTask script', function () {
 
     var err = new Error('foo');
 
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, err);
+    sinon.stub(tizenConfig, 'getMeta').throws(err);
 
     tasks.tizenTask(data, function (error) {
       error.should.equal(err);
@@ -453,7 +453,7 @@ describe('tizenTask script', function () {
 
     var err = new Error('bar');
 
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(meta);
     sinon.stub(bridge, 'runScript')
          .withArgs(remoteScript, [meta.packageName, meta.id], aFunction)
          .callsArgWith(2, err);
@@ -476,7 +476,7 @@ describe('tizenTask script', function () {
 
     var expectedArgs = [meta.packageName, meta.id, 'foo', 'bar'];
 
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(meta);
 
     var mockBridge = sinon.mock(bridge);
     mockBridge.expects('runScript')
@@ -518,7 +518,7 @@ describe('tizenTask launch', function () {
   var err = new Error();
 
   it('should fail if tizenConfig.getMeta fails', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, err);
+    sinon.stub(tizenConfig, 'getMeta').throws(err);
 
     tasks.tizenTask({action: 'start'}, function (error) {
       tizenConfig.getMeta.restore();
@@ -528,7 +528,7 @@ describe('tizenTask launch', function () {
   });
 
   it('should pass subcommand and stopOnFailure to bridge.launch', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(meta);
 
     var stopOnFailure = true;
     var action = 'start';
@@ -548,7 +548,7 @@ describe('tizenTask launch', function () {
   });
 
   it('should fail if bridge.launch fails', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(meta);
 
     var stopOnFailure = true;
     var action = 'start';
@@ -569,7 +569,7 @@ describe('tizenTask launch', function () {
   });
 
   it('should continue if bridge.launch succeeds', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(meta);
 
     var stopOnFailure = false;
     var action = 'start';
@@ -590,7 +590,7 @@ describe('tizenTask launch', function () {
   });
 
   it('should fail if subcommand=debug but bridge.launch fails', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(meta);
 
     var stopOnFailure = false;
     var action = 'debug';
@@ -613,7 +613,7 @@ describe('tizenTask launch', function () {
   });
 
   it('should fail if subcommand=debug but no remote port', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(meta);
 
     var stopOnFailure = false;
     var action = 'debug';
@@ -636,7 +636,7 @@ describe('tizenTask launch', function () {
   });
 
   it('should fail if remote port but port forwarding fails', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(meta);
 
     var stopOnFailure = false;
     var action = 'debug';
@@ -665,7 +665,7 @@ describe('tizenTask launch', function () {
   });
 
   it('should run browser if port forwarded and browserCmd is set', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(meta);
 
     var stopOnFailure = false;
     var action = 'debug';
@@ -708,7 +708,7 @@ describe('tizenTask launch', function () {
   });
 
   it('should succeed if port forwarded but no browserCmd set', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(meta);
 
     var stopOnFailure = false;
     var action = 'debug';
