@@ -17,39 +17,31 @@
 // test generated tasks
 var chai = require('chai');
 chai.should();
-var expect = chai.expect;
+chai.use(require('chai-as-promised'));
+require('mocha-as-promised')();
 
-var sinon = require('sinon');
+var expect = chai.expect,
+    sinon = require('sinon'),
+    Q = require('q');
 
 var tasksMaker = require('../../lib/tasks-maker');
 
-// matchers
-var aFunction = sinon.match.instanceOf(Function)
-
 describe('constructor', function () {
 
-  it('should throw an error if no bridge is supplied', function () {
-    var testConstructor = function () {
-      tasksMaker({
-        tizenConfig: {}
-      });
-    };
-
-    expect(testConstructor).to.throw();
+  it('should fail if no bridge is supplied', function () {
+    return tasksMaker({
+      tizenConfig: {}
+    }).should.be.rejectedWith(Error);
   });
 
   it('should throw an error if no tizenConfig is supplied', function () {
-    var testConstructor = function () {
-      tasksMaker({
-        bridge: {}
-      });
-    };
-
-    expect(testConstructor).to.throw();
+    return tasksMaker({
+      bridge: {}
+    }).should.be.rejectedWith(Error);
   });
 
   it('should return an object with tizenPrepareTask and ' +
-     'tizenTask tasks', function () {
+      'tizenTask tasks', function () {
     var tasks = tasksMaker({
       bridge: {},
       tizenConfig: {}
@@ -67,32 +59,26 @@ describe('tizenPrepareTask', function () {
     tizenAppScriptDir: '/tmp'
   };
 
-  it('should callback with error if push fails', function (done) {
-    bridge.push = sinon.stub().callsArgWith(4, new Error('push failed'));
+  it('should fail if push fails', function () {
+    bridge.push = sinon.stub().returns(Q.reject(new Error('push failed')));
 
     var tasks = tasksMaker({
       bridge: bridge,
       tizenConfig: {}
     });
 
-    tasks.tizenPrepareTask(function (err) {
-      err.should.be.instanceOf(Error);
-      done();
-    });
+    return tasks.tizenPrepareTask().should.be.rejectedWith(Error);
   });
 
-  it('should callback with 0 args if push succeeds', function (done) {
-    bridge.push = sinon.stub().callsArg(4);
+  it('should callback with 0 args if push succeeds', function () {
+    bridge.push = sinon.stub().returns(Q.resolve());
 
     var tasks = tasksMaker({
       bridge: bridge,
       tizenConfig: {}
     });
 
-    tasks.tizenPrepareTask(function (err) {
-      expect(err).to.be.undefined;
-      done();
-    });
+    return tasks.tizenPrepareTask().should.be.fulfilled;
   });
 });
 
@@ -102,25 +88,21 @@ describe('tizenTask', function () {
     tizenConfig: {}
   });
 
-  it('should fail if no action is specified', function (done) {
-    tasks.tizenTask({action: null}, function (err) {
-      err.should.be.instanceOf(Error);
-      done();
-    });
+  it('should fail if no action is specified', function () {
+    return tasks.tizenTask({action: null})
+        .should.be.rejectedWith(Error);
   });
 
-  it('should fail if invalid action is specified', function (done) {
-    tasks.tizenTask({action: 'blibbyblobbyblobgob'}, function (err) {
-      err.should.be.instanceOf(Error);
-      done();
-    });
+  it('should fail if invalid action is specified', function () {
+    return tasks.tizenTask({action: 'blibbyblobbyblobgob'})
+        .should.be.rejectedWith(Error);
   });
 });
 
 describe('tizenTask push', function () {
 
   var bridge = {
-    push: function () {}
+    push: function (localFiles, remoteDir, overwrite, chmod) {}
   };
 
   var tasks = tasksMaker({
@@ -131,34 +113,25 @@ describe('tizenTask push', function () {
   var localFiles = 'tizen-app.sh';
   var remoteDir = '/tmp';
 
-  it('should fail if localFiles is not defined', function (done) {
+  it('should fail if localFiles is not defined', function () {
     var data = {
       action: 'push'
     };
 
-    tasks.tizenTask(data, function (err) {
-      err.should.be.instanceOf(Error);
-      done();
-    });
+    return tasks.tizenTask(data).should.be.rejectedWith(Error);
   });
 
-  it('should fail if remoteDir is not defined', function (done) {
+  it('should fail if remoteDir is not defined', function () {
     var data = {
       action: 'push',
       localFiles: 'tizen-app.sh'
     };
 
-    tasks.tizenTask(data, function (err) {
-      err.should.be.instanceOf(Error);
-
-      // extra check that we're getting the error for remoteDir
-      err.message.should.match(/needs a remoteDir property/);
-
-      done();
-    });
+    return tasks.tizenTask(data)
+        .should.be.rejectedWith(Error, /needs a remoteDir property/);
   });
 
-  it('should fail if push fails on the bridge', function (done) {
+  it('should fail if push fails on the bridge', function () {
     var data = {
       action: 'push',
       localFiles: localFiles,
@@ -170,18 +143,17 @@ describe('tizenTask push', function () {
     var mockBridge = sinon.mock(bridge);
 
     mockBridge.expects('push')
-              .withArgs(localFiles, remoteDir, false, '+x', aFunction)
-              .callsArgWith(4, new Error())
-              .once();
+        .withArgs(localFiles, remoteDir, false, '+x')
+        .returns(Q.reject(new Error()))
+        .once();
 
-    tasks.tizenTask(data, function (err) {
-      err.should.be.instanceOf(Error);
-      mockBridge.verify();
-      done();
-    });
+    var result = tasks.tizenTask(data);
+
+    mockBridge.verify();
+    return result.should.be.rejectedWith(Error);
   });
 
-  it('should default to overwrite=true and chmod=null', function (done) {
+  it('should default to overwrite=true and chmod=null', function () {
     var data = {
       action: 'push',
       localFiles: localFiles,
@@ -191,24 +163,17 @@ describe('tizenTask push', function () {
     var mockBridge = sinon.mock(bridge);
 
     mockBridge.expects('push')
-              .withArgs(
-                localFiles,
-                remoteDir,
-                true,
-                null,
-                aFunction
-              )
-              .callsArg(4)
-              .once();
+        .withArgs(localFiles, remoteDir, true, null)
+        .returns(Q.resolve())
+        .once();
 
-    tasks.tizenTask(data, function (err) {
-      expect(err).to.be.undefined;
-      mockBridge.verify();
-      done();
-    });
+    var result = tasks.tizenTask(data);
+
+    mockBridge.verify();
+    return result.should.be.fulfilled;
   });
 
-  it('should use overwrite and chmod passed in data', function (done) {
+  it('should use overwrite and chmod passed in data', function () {
     var data = {
       action: 'push',
       localFiles: localFiles,
@@ -220,15 +185,14 @@ describe('tizenTask push', function () {
     var mockBridge = sinon.mock(bridge);
 
     mockBridge.expects('push')
-              .withArgs(localFiles, remoteDir, false, '+x', aFunction)
-              .callsArg(4)
-              .once();
+        .withArgs(localFiles, remoteDir, false, '+x')
+        .returns(Q.resolve())
+        .once();
 
-    tasks.tizenTask(data, function (err) {
-      expect(err).to.be.undefined;
-      mockBridge.verify();
-      done();
-    });
+    var result = tasks.tizenTask(data);
+
+    mockBridge.verify();
+    return result.should.be.fulfilled;
   });
 
 });
@@ -252,13 +216,12 @@ describe('tizenTask install', function () {
       action: 'install'
     };
 
-    sinon.stub(bridge, 'root').callsArg(1);
+    sinon.stub(bridge, 'root').returns(Q.resolve());
 
-    tasks.tizenTask(data, function (err) {
-      err.should.be.instanceOf(Error);
-      bridge.root.restore();
-      done();
-    });
+    var result = tasks.tizenTask(data);
+
+    bridge.root.restore();
+    return result.should.be.rejectedWith(Error);
   });
 
   it('should fail if bridge.install fails', function (done) {
@@ -267,43 +230,48 @@ describe('tizenTask install', function () {
       remoteFiles: remoteFiles
     };
 
-    sinon.stub(bridge, 'root').callsArg(1);
-    sinon.stub(bridge, 'install').callsArgWith(1, new Error());
+    sinon.stub(bridge, 'root').returns(Q.resolve());
+    sinon.stub(bridge, 'install').returns(Q.reject(new Error()));
 
-    tasks.tizenTask(data, function (err) {
-      err.should.be.instanceOf(Error);
-      bridge.install.restore();
-      bridge.root.restore();
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          done(new Error('this should fail'));
+        })
+        .fail(function () {
+          bridge.install.restore();
+          bridge.root.restore();
+          done();
+        });
   });
 
-  it('should succeed if bridge.install succeeds', function (done) {
+  it('should resolve if bridge.install succeeds', function (done) {
     var data = {
       action: 'install',
       remoteFiles: remoteFiles
     };
 
-    sinon.stub(bridge, 'root').callsArg(1);
-    sinon.stub(bridge, 'install').callsArgWith(1);
+    sinon.stub(bridge, 'root').returns(Q.resolve());
+    sinon.stub(bridge, 'install').returns(Q.resolve());
 
-    tasks.tizenTask(data, function (err) {
-      expect(err).to.be.undefined;
-      bridge.install.restore();
-      bridge.root.restore();
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          bridge.install.restore();
+          bridge.root.restore();
+          done();
+        })
+        .fail(done);
   });
 
 });
 
 describe('tizenTask uninstall', function () {
   var tizenConfig = {
-    getMeta: function () {}
+    getMeta: function () {
+    }
   };
 
   var bridge = {
-    uninstall: function () {}
+    uninstall: function (packageName, stopOnFailure) {}
   };
 
   var tasks = tasksMaker({
@@ -319,13 +287,16 @@ describe('tizenTask uninstall', function () {
       action: 'uninstall'
     };
 
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, new Error());
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.reject(new Error()));
 
-    tasks.tizenTask(data, function (err) {
-      err.should.be.instanceOf(Error);
-      tizenConfig.getMeta.restore();
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          done(new Error('this should fail'));
+        })
+        .fail(function () {
+          tizenConfig.getMeta.restore();
+          done();
+        });
   });
 
   it('should default to stopOnFailure=false', function (done) {
@@ -335,71 +306,76 @@ describe('tizenTask uninstall', function () {
       action: 'uninstall'
     };
 
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.resolve(meta));
 
-    var mockBridge = sinon.mock(bridge)
+    var mockBridge = sinon.mock(bridge);
     mockBridge.expects('uninstall')
-              .withArgs(expectedPackageName, expectedStop, aFunction)
-              .callsArg(2)
-              .once();
+        .withArgs(expectedPackageName, expectedStop)
+        .returns(Q.resolve())
+        .once();
 
-    tasks.tizenTask(data, function (err) {
-      expect(err).to.be.undefined;
-      tizenConfig.getMeta.restore();
-      mockBridge.verify();
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function (err) {
+          tizenConfig.getMeta.restore();
+          mockBridge.verify();
+          done();
+        })
+        .fail(done);
   });
 
   it('should fail if bridge.uninstall fails', function (done) {
     var expectedStop = true;
-
     var data = {
       action: 'uninstall',
       stopOnFailure: expectedStop
     };
 
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.resolve(meta));
 
-    var mockBridge = sinon.mock(bridge)
+    var mockBridge = sinon.mock(bridge);
     mockBridge.expects('uninstall')
-              .withArgs(expectedPackageName, expectedStop, aFunction)
-              .callsArgWith(2, new Error())
-              .once();
+        .withArgs(expectedPackageName, expectedStop)
+        .returns(Q.reject(new Error()))
+        .once();
 
-    tasks.tizenTask(data, function (err) {
-      err.should.be.instanceOf(Error);
-      tizenConfig.getMeta.restore();
-      mockBridge.verify();
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          done(new Error('this should fail'))
+        })
+        .fail(function () {
+          tizenConfig.getMeta.restore();
+          mockBridge.verify();
+          done();
+        });
   });
 
-  it('should succeed if bridge.uninstall succeeds', function (done) {
+  it('should resolve if bridge.uninstall succeeds', function (done) {
     var data = {
       action: 'uninstall'
     };
 
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.resolve(meta));
 
-    var mockBridge = sinon.mock(bridge)
+    var mockBridge = sinon.mock(bridge);
     mockBridge.expects('uninstall')
-              .withArgs(expectedPackageName, false, aFunction)
-              .callsArgWith(2, new Error())
-              .once();
+        .withArgs(expectedPackageName, false)
+        .returns(Q.resolve())
+        .once();
 
-    tasks.tizenTask(data, function (err) {
-      err.should.be.instanceOf(Error);
-      tizenConfig.getMeta.restore();
-      mockBridge.verify();
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          tizenConfig.getMeta.restore();
+          mockBridge.verify();
+          done();
+        })
+        .fail(done);
   });
 });
 
 describe('tizenTask script', function () {
   var tizenConfig = {
-    getMeta: function () {}
+    getMeta: function () {
+    }
   };
 
   var bridge = {
@@ -420,11 +396,14 @@ describe('tizenTask script', function () {
   var remoteScript = '/tmp/tizen-app.sh';
 
   it('should fail if remoteScript is not specified', function (done) {
-    tasks.tizenTask({action: 'script'}, function (err) {
-      err.should.be.instanceOf(Error);
-      err.message.should.match(/needs a remoteScript property/);
-      done();
-    });
+    tasks.tizenTask({action: 'script'})
+        .then(function () {
+          done(new Error('this should fail'))
+        })
+        .fail(function (err) {
+          err.message.should.match(/needs a remoteScript property/);
+          done();
+        });
   });
 
   it('should fail if tizenConfig.getMeta fails', function (done) {
@@ -433,16 +412,14 @@ describe('tizenTask script', function () {
       remoteScript: remoteScript
     };
 
-    var err = new Error('foo');
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.reject(new Error()));
 
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, err);
-
-    tasks.tizenTask(data, function (error) {
-      error.should.equal(err);
-      error.message.should.match(/foo/);
-      tizenConfig.getMeta.restore();
-      done();
-    });
+    tasks.tizenTask(data)
+        .then()
+        .fail(function () {
+          tizenConfig.getMeta.restore();
+          done();
+        });
   });
 
   it('should fail if bridge.runScript fails', function (done) {
@@ -451,20 +428,20 @@ describe('tizenTask script', function () {
       remoteScript: remoteScript
     };
 
-    var err = new Error('bar');
-
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.resolve(meta));
     sinon.stub(bridge, 'runScript')
-         .withArgs(remoteScript, [meta.packageName, meta.id], aFunction)
-         .callsArgWith(2, err);
+        .withArgs(remoteScript, [meta.packageName, meta.id])
+        .returns(Q.reject(new Error()));
 
-    tasks.tizenTask(data, function (error) {
-      error.should.equal(err);
-      error.message.should.match(/bar/);
-      tizenConfig.getMeta.restore();
-      bridge.runScript.restore();
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          done(new Error('this should fail'))
+        })
+        .fail(function () {
+          tizenConfig.getMeta.restore();
+          bridge.runScript.restore();
+          done();
+        });
   });
 
   it('should pass data.args to runScript as arguments', function (done) {
@@ -476,32 +453,34 @@ describe('tizenTask script', function () {
 
     var expectedArgs = [meta.packageName, meta.id, 'foo', 'bar'];
 
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.resolve(meta));
 
     var mockBridge = sinon.mock(bridge);
     mockBridge.expects('runScript')
-              .withArgs(remoteScript, expectedArgs, aFunction)
-              .callsArg(2)
-              .once();
+        .withArgs(remoteScript, expectedArgs)
+        .returns(Q.resolve())
+        .once();
 
-    tasks.tizenTask(data, function (err) {
-      expect(err).to.be.undefined;
-      tizenConfig.getMeta.restore();
-      mockBridge.verify();
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function (err) {
+          tizenConfig.getMeta.restore();
+          mockBridge.verify();
+          done();
+        })
+        .fail(done);
   });
 });
 
 describe('tizenTask launch', function () {
   var tizenConfig = {
-    getMeta: function () {}
+    getMeta: function () {
+    }
   };
 
   var bridge = {
-    launch: function () {},
-    portForward: function () {},
-    runBrowser: function () {}
+    launch: function (subcommand, appUri, stopOnFailure) {},
+    portForward: function (localPort, remotePort) {},
+    runBrowser: function (browserCmd, localPort) {}
   };
 
   var tasks = tasksMaker({
@@ -514,21 +493,21 @@ describe('tizenTask launch', function () {
     uri: 'someuri'
   };
 
-  var remoteScript = '/tmp/tizen-app.sh';
-  var err = new Error();
-
   it('should fail if tizenConfig.getMeta fails', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, err);
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.reject(new Error()));
 
-    tasks.tizenTask({action: 'start'}, function (error) {
-      tizenConfig.getMeta.restore();
-      error.should.equal(err);
-      done();
-    });
+    tasks.tizenTask({action: 'start'})
+        .then(function () {
+          done(new Error('this should fail'));
+        })
+        .fail(function () {
+          tizenConfig.getMeta.restore();
+          done();
+        });
   });
 
   it('should pass subcommand and stopOnFailure to bridge.launch', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.resolve(meta));
 
     var stopOnFailure = true;
     var action = 'start';
@@ -536,19 +515,21 @@ describe('tizenTask launch', function () {
 
     var mockBridge = sinon.mock(bridge);
     mockBridge.expects('launch')
-              .withArgs(action, meta.id, stopOnFailure, aFunction)
-              .callsArg(3)
-              .once();
+        .withArgs(action, meta.id, stopOnFailure)
+        .returns(Q.resolve())
+        .once();
 
-    tasks.tizenTask(data, function () {
-      mockBridge.verify();
-      tizenConfig.getMeta.restore();
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          mockBridge.verify();
+          tizenConfig.getMeta.restore();
+          done();
+        })
+        .fail(done);
   });
 
   it('should fail if bridge.launch fails', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.resolve(meta));
 
     var stopOnFailure = true;
     var action = 'start';
@@ -556,20 +537,23 @@ describe('tizenTask launch', function () {
 
     var mockBridge = sinon.mock(bridge);
     mockBridge.expects('launch')
-              .withArgs(action, meta.id, stopOnFailure, aFunction)
-              .callsArgWith(3, err)
-              .once();
+        .withArgs(action, meta.id, stopOnFailure)
+        .returns(Q.reject(new Error()))
+        .once();
 
-    tasks.tizenTask(data, function (error) {
-      mockBridge.verify();
-      tizenConfig.getMeta.restore();
-      error.should.equal(err);
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          done(new Error('this should fail'));
+        })
+        .fail(function () {
+          mockBridge.verify();
+          tizenConfig.getMeta.restore();
+          done();
+        });
   });
 
   it('should continue if bridge.launch succeeds', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.resolve(meta));
 
     var stopOnFailure = false;
     var action = 'start';
@@ -577,20 +561,21 @@ describe('tizenTask launch', function () {
 
     var mockBridge = sinon.mock(bridge);
     mockBridge.expects('launch')
-              .withArgs(action, meta.id, stopOnFailure, aFunction)
-              .callsArg(3)
-              .once();
+        .withArgs(action, meta.id, stopOnFailure)
+        .returns(Q.resolve())
+        .once();
 
-    tasks.tizenTask(data, function (error) {
-      mockBridge.verify();
-      tizenConfig.getMeta.restore();
-      expect(error).to.be.undefined;
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          mockBridge.verify();
+          tizenConfig.getMeta.restore();
+          done();
+        })
+        .fail(done);
   });
 
   it('should fail if subcommand=debug but bridge.launch fails', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.resolve(meta));
 
     var stopOnFailure = false;
     var action = 'debug';
@@ -600,20 +585,23 @@ describe('tizenTask launch', function () {
 
     // bridge.launch fails for debug
     mockBridge.expects('launch')
-              .withArgs(action, meta.id, stopOnFailure, aFunction)
-              .callsArgWith(3, err)
-              .once();
+        .withArgs(action, meta.id, stopOnFailure)
+        .returns(Q.reject(new Error()))
+        .once();
 
-    tasks.tizenTask(data, function (error) {
-      mockBridge.verify();
-      tizenConfig.getMeta.restore();
-      error.should.equal(err);
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          done(new Error('this should fail'));
+        })
+        .fail(function () {
+          mockBridge.verify();
+          tizenConfig.getMeta.restore();
+          done();
+        });
   });
 
   it('should fail if subcommand=debug but no remote port', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.resolve(meta));
 
     var stopOnFailure = false;
     var action = 'debug';
@@ -623,20 +611,24 @@ describe('tizenTask launch', function () {
 
     // bridge.launch returns no PORT
     mockBridge.expects('launch')
-              .withArgs(action, meta.id, stopOnFailure, aFunction)
-              .callsArgWith(3, null, '-------GARBAGE-------')
-              .once();
+        .withArgs(action, meta.id, stopOnFailure)
+        .returns(Q.resolve('-------GARBAGE-------'))
+        .once();
 
-    tasks.tizenTask(data, function (error) {
-      mockBridge.verify();
-      tizenConfig.getMeta.restore();
-      error.message.should.match(/no remote port available for debugging/);
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          done(new Error('this should fail'));
+        })
+        .fail(function (error) {
+          mockBridge.verify();
+          tizenConfig.getMeta.restore();
+          error.message.should.match(/no remote port available for debugging/);
+          done();
+        });
   });
 
   it('should fail if remote port but port forwarding fails', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.resolve(meta));
 
     var stopOnFailure = false;
     var action = 'debug';
@@ -646,26 +638,29 @@ describe('tizenTask launch', function () {
 
     // bridge.launch returns PORT
     mockBridge.expects('launch')
-              .withArgs(action, meta.id, stopOnFailure, aFunction)
-              .callsArgWith(3, null, 'PORT 1234')
-              .once();
+        .withArgs(action, meta.id, stopOnFailure)
+        .returns(Q.resolve('PORT 1234'))
+        .once();
 
     // port forwarding fails
     mockBridge.expects('portForward')
-              .withArgs(9090, 1234, aFunction)
-              .callsArgWith(2, err)
-              .once();
+        .withArgs(9090, 1234)
+        .returns(Q.reject(new Error()))
+        .once();
 
-    tasks.tizenTask(data, function (error) {
-      mockBridge.verify();
-      tizenConfig.getMeta.restore();
-      error.should.equal(err);
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          done(new Error('this should fail'));
+        })
+        .fail(function () {
+          mockBridge.verify();
+          tizenConfig.getMeta.restore();
+          done();
+        });
   });
 
   it('should run browser if port forwarded and browserCmd is set', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.resolve(meta));
 
     var stopOnFailure = false;
     var action = 'debug';
@@ -683,32 +678,33 @@ describe('tizenTask launch', function () {
 
     // bridge.launch returns PORT
     mockBridge.expects('launch')
-              .withArgs(action, meta.id, stopOnFailure, aFunction)
-              .callsArgWith(3, null, 'PORT 1234')
-              .once();
+        .withArgs(action, meta.id, stopOnFailure)
+        .returns(Q.resolve('PORT 1234'))
+        .once();
 
     // port forwarding succeeds
     mockBridge.expects('portForward')
-              .withArgs(localPort, 1234, aFunction)
-              .callsArg(2)
-              .once();
+        .withArgs(localPort, 1234)
+        .returns(Q.resolve())
+        .once();
 
     // run browser should be called
     mockBridge.expects('runBrowser')
-              .withArgs(browserCmd, localPort, aFunction)
-              .callsArg(2)
-              .once();
+        .withArgs(browserCmd, localPort)
+        .returns(Q.resolve())
+        .once();
 
-    tasks.tizenTask(data, function (error) {
-      mockBridge.verify();
-      tizenConfig.getMeta.restore();
-      expect(error).to.be.undefined;
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          mockBridge.verify();
+          tizenConfig.getMeta.restore();
+          done();
+        })
+        .fail(done);
   });
 
-  it('should succeed if port forwarded but no browserCmd set', function (done) {
-    sinon.stub(tizenConfig, 'getMeta').callsArgWith(0, null, meta);
+  it('should resolve if port forwarded but no browserCmd set', function (done) {
+    sinon.stub(tizenConfig, 'getMeta').returns(Q.resolve(meta));
 
     var stopOnFailure = false;
     var action = 'debug';
@@ -724,22 +720,23 @@ describe('tizenTask launch', function () {
 
     // bridge.launch returns PORT
     mockBridge.expects('launch')
-              .withArgs(action, meta.id, stopOnFailure, aFunction)
-              .callsArgWith(3, null, 'PORT 1234')
-              .once();
+        .withArgs(action, meta.id, stopOnFailure)
+        .returns(Q.resolve('PORT 1234'))
+        .once();
 
     // port forwarding succeeds
     mockBridge.expects('portForward')
-              .withArgs(localPort, 1234, aFunction)
-              .callsArg(2)
-              .once();
+        .withArgs(localPort, 1234)
+        .returns(Q.resolve())
+        .once();
 
-    tasks.tizenTask(data, function (error) {
-      mockBridge.verify();
-      tizenConfig.getMeta.restore();
-      expect(error).to.be.undefined;
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          mockBridge.verify();
+          tizenConfig.getMeta.restore();
+          done();
+        })
+        .fail(done);
   });
 });
 
@@ -766,92 +763,102 @@ describe('tizenTask asRoot', function () {
     var mockBridge = sinon.mock(bridge);
 
     mockBridge.expects('root')
-              .withArgs(true, aFunction)
-              .callsArgWith(1, err)
-              .once();
+        .withArgs(true)
+        .returns(Q.reject(new Error()))
+        .once();
 
-    tasks.tizenTask(data, function (error) {
-      mockBridge.verify();
-      error.should.equal(err);
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          done(new Error('this should fail'));
+        })
+        .fail(function () {
+          mockBridge.verify();
+          done();
+        });
   });
 
   it('should run task if asRoot:true succeeds but fail when ' +
-     'asRoot:false fails', function (done) {
+      'asRoot:false fails', function (done) {
     var mockBridge = sinon.mock(bridge);
 
     mockBridge.expects('root')
-              .withArgs(true, aFunction)
-              .callsArg(1)
-              .once();
+        .withArgs(true)
+        .returns(Q.resolve())
+        .once();
 
     mockBridge.expects('install')
-              .withArgs(data.remoteFiles, aFunction)
-              .callsArg(1)
-              .once();
+        .withArgs(data.remoteFiles)
+        .returns(Q.resolve())
+        .once();
 
     mockBridge.expects('root')
-              .withArgs(false, aFunction)
-              .callsArgWith(1, err)
-              .once();
+        .withArgs(false)
+        .returns(Q.reject(new Error()))
+        .once();
 
-    tasks.tizenTask(data, function (error) {
-      mockBridge.verify();
-      error.should.equal(err);
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          done(new Error('this should fail'));
+        })
+        .fail(function () {
+          mockBridge.verify();
+          done();
+        });
   });
 
   it('should fail if asRoot:true succeeds but subcommand fails ' +
-     'but still run asRoot:false', function (done) {
+      'but still run asRoot:false', function (done) {
     var mockBridge = sinon.mock(bridge);
 
     mockBridge.expects('root')
-              .withArgs(true, aFunction)
-              .callsArg(1)
-              .once();
+        .withArgs(true)
+        .returns(Q.resolve())
+        .once();
 
     mockBridge.expects('install')
-              .withArgs(data.remoteFiles, aFunction)
-              .callsArgWith(1, err)
-              .once();
+        .withArgs(data.remoteFiles)
+        .returns(Q.reject(new Error()))
+        .once();
 
     mockBridge.expects('root')
-              .withArgs(false, aFunction)
-              .callsArg(1)
-              .once();
+        .withArgs(false)
+        .returns(Q.resolve())
+        .once();
 
-    tasks.tizenTask(data, function (error) {
-      mockBridge.verify();
-      error.should.equal(err);
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          done(new Error('this should fail'));
+        })
+        .fail(function () {
+          mockBridge.verify();
+          done();
+        });
   });
 
   it('should run task successfully if asRoot:true, bridge action ' +
-     'and asRoot:false all succeed', function (done) {
+      'and asRoot:false all succeed', function (done) {
     var mockBridge = sinon.mock(bridge);
 
     mockBridge.expects('root')
-              .withArgs(true, aFunction)
-              .callsArg(1)
-              .once();
+        .withArgs(true)
+        .returns(Q.resolve())
+        .once();
 
     mockBridge.expects('install')
-              .withArgs(data.remoteFiles, aFunction)
-              .callsArg(1)
-              .once();
+        .withArgs(data.remoteFiles)
+        .returns(Q.resolve())
+        .once();
 
     mockBridge.expects('root')
-              .withArgs(false, aFunction)
-              .callsArg(1)
-              .once();
+        .withArgs(false)
+        .returns(Q.resolve())
+        .once();
 
-    tasks.tizenTask(data, function (error) {
-      mockBridge.verify();
-      expect(error).to.be.undefined;
-      done();
-    });
+    tasks.tizenTask(data)
+        .then(function () {
+          mockBridge.verify();
+          done();
+        })
+        .fail(done);
   });
 });

@@ -56,12 +56,7 @@ module.exports = function (grunt) {
 
       var done = this.async();
 
-      try {
-        makeTasks(config).tizenPrepareTask.call(this, done);
-      }
-      catch (e) {
-        grunt.fatal(e);
-      }
+      makeTasks(config).tizenPrepareTask().then(done, grunt.fatal);
     }
   );
 
@@ -82,12 +77,7 @@ module.exports = function (grunt) {
       var data = this.data;
       var done = this.async();
 
-      try {
-        makeTasks(config).tizenTask.call(this, data, done);
-      }
-      catch (e) {
-        grunt.fatal(e);
-      }
+      makeTasks(config).tizenTask.call(this, data).then(done, grunt.fatal);
     }
   );
 };

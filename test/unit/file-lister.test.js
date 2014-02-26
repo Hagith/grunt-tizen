@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var chai = require('chai')
+var chai = require('chai');
 chai.should();
+chai.use(require('chai-as-promised'));
+require('mocha-as-promised')();
 var expect = chai.expect;
-var sinon = require('sinon');
 
 var path = require('path');
 var fs = require('fs');
@@ -61,68 +62,34 @@ describe('file lister', function () {
     latest.should.equal(youngestPath);
   });
 
-  it('should return an error if localFiles is invalid', function (done) {
-    var spy = sinon.spy();
-
-    var cb = function () {
-      spy.apply(null, arguments);
-      spy.calledWith(sinon.match.instanceOf(Error)).should.be.true;
-      done();
-    };
-
-    var list = fileLister.list(null, cb);
+  it('should throw an error if localFiles is invalid', function () {
+    return fileLister.list(null).should.be.rejectedWith(Error);
   });
 
-  it('should return the original string in an array if localFiles is a single string', function (done) {
-    var spy = sinon.spy();
-
-    var cb = function () {
-      spy.apply(null, arguments);
-      spy.calledWith(null, ['foo.txt']).should.be.true;
-      done();
-    };
-
-    var list = fileLister.list('foo.txt', cb);
+  it('should return the original string in an array if localFiles is a single string', function () {
+    return fileLister.list('foo.txt').should.be.eventually.eql(['foo.txt']);
   });
 
-  it('should return an error if pattern is invalid', function (done) {
-    var spy = sinon.spy();
-
-    var cb = function () {
-      spy.apply(null, arguments);
-      spy.calledWith(sinon.match.instanceOf(Error)).should.be.true;
-      done();
-    };
-
-    var list = fileLister.list({pattern: null}, cb);
+  it('should return an error if pattern is invalid', function () {
+    return fileLister.list({pattern: null}).should.be.rejectedWith(Error);
   });
 
-  it('should list files matching a glob', function (done) {
-    var spy = sinon.spy();
-
+  it('should list files matching a glob', function () {
     var expected = [
       convertSlashes(olderPath),
       convertSlashes(oldestPath)
     ];
 
-    var cb = function () {
-      spy.apply(null, arguments);
-      spy.lastCall.args[1].should.deep.equal(expected);
-      done();
-    };
-
     var glob = path.join(dataDir, 'old*');
-    var list = fileLister.list({pattern: glob}, cb);
+    return fileLister.list({pattern: glob}).should.be.eventually.eql(expected);
   });
 
   it('should return the most-recently-modified file matching a glob', function (done) {
-    var spy = sinon.spy();
-
     var expected = [ convertSlashes(olderPath) ];
 
-    var cb = function () {
-      spy.apply(null, arguments);
-      spy.lastCall.args[1].should.deep.equal(expected);
+    var glob = path.join(dataDir, 'old*');
+    fileLister.list({pattern: glob, filter: 'latest'}).then(function(files) {
+      files.should.be.eql(expected);
 
       // manual check that the returned file is correct
       var mtimeOlder = fs.statSync(olderPath).mtime.getTime()
@@ -131,23 +98,11 @@ describe('file lister', function () {
       expect(mtimeOlder).to.be.greaterThan(mtimeOldest);
 
       done();
-    };
-
-    var glob = path.join(dataDir, 'old*');
-    fileLister.list({pattern: glob, filter: 'latest'}, cb);
+    });
   });
 
-  it('should return the original array if a string array is passed in', function (done) {
-    var spy = sinon.spy();
-
+  it('should return the original array if a string array is passed in', function () {
     var expected = [ oldestPath, olderPath ];
-
-    var cb = function () {
-      spy.apply(null, arguments);
-      spy.lastCall.args[1].should.deep.equal(expected);
-      done();
-    };
-
-    fileLister.list([ oldestPath, olderPath ], cb);
+    return fileLister.list([ oldestPath, olderPath ]).should.be.eventually.eql(expected);
   });
 });

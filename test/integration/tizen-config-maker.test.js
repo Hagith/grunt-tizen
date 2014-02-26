@@ -34,7 +34,7 @@ describe('tizenConfigMaker', function () {
     tizenConfig.configFile.should.equal('data/splat.xml');
   });
 
-  // this is testing that the xml2js parser returns objects in
+  // this is testing that the xml2json parser returns objects in
   // the correct format such that they are retrieved into the correct
   // properties on the returned meta object
   it('should parse config.xml and return the correct ID and URI', function (done) {
@@ -42,15 +42,13 @@ describe('tizenConfigMaker', function () {
       configFile: path.join(__dirname, 'data/config.xml')
     });
 
-    tizenConfig.getMeta(function (err, result) {
-      expect(err).to.be.null;
-
-      result.should.eql({
+    tizenConfig.getMeta().then(function(data) {
+      data.should.eql({
         uri: 'https://bogus.url/bogusappln',
         id: 'bogusappln',
-        packageName: 'bogusappln.1234567890'
+        packageName: 'bogusappln.1234567890',
+        content: 'index.html'
       });
-
       done();
     });
   });
